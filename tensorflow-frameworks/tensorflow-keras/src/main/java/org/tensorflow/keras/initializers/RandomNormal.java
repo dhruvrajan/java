@@ -2,6 +2,7 @@ package org.tensorflow.keras.initializers;
 
 
 import org.tensorflow.Operand;
+import org.tensorflow.op.core.Constant;
 import org.tensorflow.op.Ops;
 
 public class RandomNormal extends Initializer {
@@ -23,10 +24,10 @@ public class RandomNormal extends Initializer {
 
         return tf.random.parameterizedTruncatedNormal(
                 shape,
-                tf.constant(this.mean, dtype),
-                tf.constant(this.stdev, dtype),
-                tf.constant(this.p1, dtype),
-                tf.constant(this.p2, dtype)
+                Constant.create(tf.scope(),this.mean, dtype),
+                Constant.create(tf.scope(),this.stdev, dtype),
+                Constant.create(tf.scope(),this.p1, dtype),
+                Constant.create(tf.scope(),this.p2, dtype)
         );
     }
 }

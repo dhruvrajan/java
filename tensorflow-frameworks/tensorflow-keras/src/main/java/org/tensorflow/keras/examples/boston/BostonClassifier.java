@@ -44,11 +44,11 @@
 //
 //
 //
-//            tf.reduceMean(tf.square(error), tf.constant(0));
-//            Mul<Float> gradients = tf.mul(tf.constant((float) 2.0/FEATURES),
-// tf.matMul(tf.transpose(X, tf.constant(new int[] {1, 0})), error));
+//            tf.reduceMean(tf.square(error), Constant.create(tf.scope(),0));
+//            Mul<Float> gradients = tf.mul(Constant.create(tf.scope(),(float) 2.0/FEATURES),
+// tf.matMul(tf.transpose(X, Constant.create(tf.scope(),new int[] {1, 0})), error));
 //            ApplyGradientDescent<Float> applyGradientDescent =
-// tf.applyGradientDescent(theta,tf.constant((float) 1), gradients);
+// tf.applyGradientDescent(theta,Constant.create(tf.scope(),(float) 1), gradients);
 //
 //            Dataset batches;
 //            try {
@@ -88,6 +88,6 @@
 //    }
 //
 //    private static Operand<Integer> constArray(Ops tf, int... i) {
-//        return tf.constant(i);
+//        return Constant.create(tf.scope(),i);
 //    }
 // }
