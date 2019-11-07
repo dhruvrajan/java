@@ -21,7 +21,7 @@ public abstract class Optimizer<T extends Number> {
     }
 
     private Gradients computeGradients(Ops tf, Operand<T> loss, List<Variable<T>> weights) {
-        return tf.gradients(loss, weights);
+        return Gradients.create(tf.scope(), loss, weights);
     }
 
     public void build(Ops tf, Class<T> dtype) {

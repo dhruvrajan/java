@@ -13,6 +13,6 @@ public class Constant extends Initializer {
 
     @Override
     public <T extends Number> Operand<T> initialize(Ops tf, Operand<Integer> shape, Class<T> dtype) {
-        return tf.fill(shape, tf.constant(val, dtype));
+        return tf.fill(shape, org.tensorflow.op.core.Constant.create(tf.scope(), val, dtype));
     }
 }

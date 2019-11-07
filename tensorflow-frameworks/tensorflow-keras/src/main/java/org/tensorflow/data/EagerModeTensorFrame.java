@@ -38,7 +38,7 @@
 //         for (int i = 0; i < slices.length; i++) {
 //             long[] startSelector = Utils.batchStartSelector(tf, (int) start, this.data[i].asOutput().shape().numDimensions());
 //             long[] sizeSelector = Utils.batchSizeSelector(tf, (int) size, this.data[i].asOutput().shape().numDimensions());
-//             slices[i] = tf.slice(this.data[i], tf.constant(startSelector), tf.constant(sizeSelector));
+//             slices[i] = tf.slice(this.data[i], Constant.create(tf.scope(),startSelector), Constant.create(tf.scope(),sizeSelector));
 //         }
 
 //         return slices;

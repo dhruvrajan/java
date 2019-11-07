@@ -24,8 +24,8 @@
 //
 //    @Override
 //    public void build(Ops tf, Shape inputShape) {
-//        filters = tf.constant(filtersIn, Float.class);
-//        strides = tf.constant(options.getStrides());
+//        filters = Constant.create(tf.scope(),filtersIn, Float.class);
+//        strides = Constant.create(tf.scope(),options.getStrides());
 //    }
 //
 //    @Override

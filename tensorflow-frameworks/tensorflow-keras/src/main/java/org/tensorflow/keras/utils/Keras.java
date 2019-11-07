@@ -4,6 +4,7 @@ import org.tensorflow.Operand;
 import org.tensorflow.Shape;
 import org.tensorflow.Tensor;
 import org.tensorflow.op.Ops;
+import org.tensorflow.op.core.Constant;
 
 import java.nio.FloatBuffer;
 import java.nio.file.Path;
@@ -43,7 +44,7 @@ public class Keras {
   //
 
   public static Operand<Integer> constArray(Ops tf, int... i) {
-    return tf.constant(i);
+    return Constant.create(tf.scope(), i);
   }
 
   public static Operand<Integer> shapeOperand(Ops tf, Shape shape) {
@@ -52,7 +53,7 @@ public class Keras {
       shapeArray[i] = (int) shape.size(i);
     }
 
-    return tf.constant(shapeArray);
+    return Constant.create(tf.scope(), shapeArray);
   }
 
   public static long head(long... dims) {

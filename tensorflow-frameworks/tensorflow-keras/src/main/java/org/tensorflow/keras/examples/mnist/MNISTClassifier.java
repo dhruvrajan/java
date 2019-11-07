@@ -40,7 +40,7 @@
 //
 //      Variable<Float> biases = tf.variable(Shape.make(FEATURES), Float.class);
 //      Assign<Float> biasesInit =
-//          tf.assign(biases, tf.zeros(tf.constant(new int[] {FEATURES}), Float.class));
+//          tf.assign(biases, tf.zeros(Constant.create(tf.scope(),new int[] {FEATURES}), Float.class));
 //
 //      Softmax<Float> softmax = tf.softmax(tf.add(tf.matMul(images, weights), biases));
 //      Mean<Float> crossEntropy =
@@ -49,16 +49,16 @@
 //              constArray(tf, 0));
 //
 //      Gradients gradients = tf.gradients(crossEntropy, Arrays.asList(weights, biases));
-//      Constant<Float> alpha = tf.constant(LEARNING_RATE);
+//      Constant<Float> alpha = Constant.create(tf.scope(),LEARNING_RATE);
 //      ApplyGradientDescent<Float> weightGradientDescent =
 //          tf.applyGradientDescent(weights, alpha, gradients.dy(0));
 //      ApplyGradientDescent<Float> biasGradientDescent =
 //          tf.applyGradientDescent(biases, alpha, gradients.dy(1));
 //
-//      Operand<Long> predicted = tf.argMax(softmax, tf.constant(1));
-//      Operand<Long> expected = tf.argMax(labels, tf.constant(1));
+//      Operand<Long> predicted = tf.argMax(softmax, Constant.create(tf.scope(),1));
+//      Operand<Long> expected = tf.argMax(labels, Constant.create(tf.scope(),1));
 //      Operand<Float> accuracy =
-//          tf.mean(tf.cast(tf.equal(predicted, expected), Float.class), tf.constant(0));
+//          tf.mean(tf.cast(tf.equal(predicted, expected), Float.class), Constant.create(tf.scope(),0));
 //
 //      Operand first = tf.print(accuracy, Collections.singletonList(accuracy));
 //      Dataset data;
@@ -119,6 +119,6 @@
 //  }
 //
 //  private static Operand<Integer> constArray(Ops tf, int... i) {
-//    return tf.constant(i);
+//    return Constant.create(tf.scope(),i);
 //  }
 //}
