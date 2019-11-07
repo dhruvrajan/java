@@ -1,28 +1,21 @@
 package org.tensorflow.keras.activations;
 
 import org.tensorflow.Operand;
-import org.tensorflow.keras.mixin.ActivationFunction;
 import org.tensorflow.op.Ops;
+
+import java.util.function.BiFunction;
 
 /**
  * Creates an `Activation` from an unnamed function.
- * @param <T>
  */
 public class Lambda<T extends Number> extends Activation<T> {
-    private ActivationFunction<T> activation;
+    private BiFunction<Ops, Operand<T>, Operand<T>> activation;
 
-    /**
-     * Creates an Activation function.
-     * @param unnamedActivation An activation function.
-     */
-    public Lambda(ActivationFunction<T> unnamedActivation) {
+    public Lambda(BiFunction<Ops, Operand<T>, Operand<T>> activation) {
         super();
-        this.activation = unnamedActivation;
+        this.activation = activation;
     }
 
-    /**
-     * Applies the given activation.
-     */
     @Override
     protected Operand<T> call(Ops tf, Operand<T> inputs) {
         return activation.apply(tf, inputs);
