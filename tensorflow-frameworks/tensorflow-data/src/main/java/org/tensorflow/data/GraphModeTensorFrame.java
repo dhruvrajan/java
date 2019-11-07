@@ -2,12 +2,8 @@ package org.tensorflow.data;
 
 import org.tensorflow.*;
 import org.tensorflow.op.Ops;
-import org.tensorflow.op.core.Constant;
 import org.tensorflow.op.core.Placeholder;
 import org.tensorflow.op.core.Slice;
-
-import java.util.Iterator;
-import java.util.List;
 
 public class GraphModeTensorFrame<T> extends TensorFrame<T> implements GraphLoader<T>, AutoCloseable {
     private Graph graphRef;
@@ -92,7 +88,7 @@ public class GraphModeTensorFrame<T> extends TensorFrame<T> implements GraphLoad
         return this.dataTensors[0].shape()[0];
     }
 
-    public void addBatchToSessionRunner(Ops tf, Session.Runner runner, long batchIndex, boolean fetchBatches) {
+    public void feedBatchToSessionRunner(Ops tf, Session.Runner runner, long batchIndex, boolean fetchBatches) {
         // Feed Data Tensors
         for (int i = 0; i < dataPlaceholders.length; i++) {
             runner.feed(dataPlaceholders[i].asOutput(), dataTensors[i]);
