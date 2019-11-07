@@ -15,18 +15,19 @@ public abstract class Activation<T extends Number> extends Layer<T> {
   }
 
   @Override
-  public void build(Ops tf, Shape inputShape) {
+  public final void build(Ops tf, Shape inputShape) {
     // Activations don't need state to be built and added to a graph. Does nothing.
   }
 
   @Override
-  public Shape computeOutputShape(Shape inputShape) {
+  public final Shape computeOutputShape(Shape inputShape) {
     // Activation functions should not change the shape of the input.
     return inputShape;
   }
 
   @Override
-  public Operand<T> call(Ops tf, Operand<T>... inputs) {
+  @SafeVarargs
+  public final Operand<T> call(Ops tf, Operand<T>... inputs) {
     return call(tf, inputs[0]);
   }
 
