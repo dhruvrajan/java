@@ -19,7 +19,7 @@ public class GradientDescentOptimizer<T extends Number> extends Optimizer<T> {
 
     @Override
     public void build(Ops tf) {
-        this.alpha = tf.constant(lr, getDtype());
+        this.alpha = Constant.create(tf.scope(), lr, getDtype());
     }
 
     @Override

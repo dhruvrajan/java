@@ -7,6 +7,6 @@ import org.tensorflow.op.Ops;
 public class Zeros extends Initializer {
   @Override
   public <T extends Number> Operand<T> initialize(Ops tf, Operand<Integer> shape, Class<T> dtype) {
-    return tf.zeros(shape, dtype);
+    return org.tensorflow.op.core.Zeros.create(tf.scope(), shape, dtype);
   }
 }
