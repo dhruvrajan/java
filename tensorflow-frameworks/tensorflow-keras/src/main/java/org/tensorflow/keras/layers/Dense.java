@@ -41,7 +41,7 @@ public class Dense<T extends Number> extends Layer<T> {
     }
 
     @Override
-    public void build(Ops tf, Shape inputShape) {
+    protected final void build(Ops tf, Shape inputShape) {
         // Check that final dimension is known
         new TensorShape(inputShape).assertKnown(inputShape.numDimensions() - 1);
 
