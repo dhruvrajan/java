@@ -2,17 +2,16 @@ package org.tensorflow.keras.datasets;
 
 import org.tensorflow.Graph;
 import org.tensorflow.Tensors;
-import org.tensorflow.data.GraphLoader;
-import org.tensorflow.data.GraphModeTensorFrame;
+import org.tensorflow.data.GraphTensorArrayDataset;
 import org.tensorflow.keras.utils.DataUtils;
 import org.tensorflow.keras.utils.Keras;
 import org.tensorflow.utils.Pair;
 
 import java.io.DataInputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 
@@ -41,57 +40,56 @@ public class MNIST {
      *
      * @throws IOException when the download fails
      */
-    public static void download() throws IOException {
+    public static void download() throws IOException, NoSuchAlgorithmException {
         DataUtils.getFile(LOCAL_PREFIX + TRAIN_IMAGES, ORIGIN_BASE + TRAIN_IMAGES,
-                "440fcabf73cc546fa21475e81ea370265605f56be210a4024d2ca8f203523609", DataUtils.Checksum.sha256);
+                "440fcabf73cc546fa21475e81ea370265605f56be210a4024d2ca8f203523609", "SHA-256");
         DataUtils.getFile(LOCAL_PREFIX + TRAIN_LABELS, ORIGIN_BASE + TRAIN_LABELS,
-                "fcdfeedb53b53c99384b2cd314206a08fdf6aa97070e19921427a179ea123d19", DataUtils.Checksum.sha256);
+                "fcdfeedb53b53c99384b2cd314206a08fdf6aa97070e19921427a179ea123d19", "SHA-256");
         DataUtils.getFile(LOCAL_PREFIX + TEST_IMAGES, ORIGIN_BASE + TEST_IMAGES,
-                "beb4b4806386107117295b2e3e08b4c16a6dfb4f001bfeb97bf25425ba1e08e4", DataUtils.Checksum.sha256);
+                "beb4b4806386107117295b2e3e08b4c16a6dfb4f001bfeb97bf25425ba1e08e4","SHA-256");
         DataUtils.getFile(LOCAL_PREFIX + TEST_LABELS, ORIGIN_BASE + TEST_LABELS,
-                "986c5b8cbc6074861436f5581f7798be35c7c0025262d33b4df4c9ef668ec773", DataUtils.Checksum.sha256);
+                "986c5b8cbc6074861436f5581f7798be35c7c0025262d33b4df4c9ef668ec773", "SHA-256");
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         try (Graph graph = new Graph()) {
-
             graphLoaders(graph);
         }
     }
 
-    public static Pair<GraphLoader<Float>, GraphLoader<Float>> graphLoaders(Graph graph) throws IOException {
+    public static Pair<GraphTensorArrayDataset<Float>, GraphTensorArrayDataset<Float>> graphLoaders(Graph graph) throws IOException, NoSuchAlgorithmException {
         // Download MNIST files if they don't exist.
         MNIST.download();
 
         // Read data files into arrays
-        float[][] trainImages = readImages(Keras.kerasPath(LOCAL_PREFIX, TRAIN_IMAGES).toString());
-        float[][] trainLabels = readLabelsOneHot(Keras.kerasPath(LOCAL_PREFIX, TRAIN_LABELS).toString());
-        float[][] testImages = readImages(Keras.kerasPath(LOCAL_PREFIX, TEST_IMAGES).toString());
-        float[][] testLabels = readLabelsOneHot(Keras.kerasPath(LOCAL_PREFIX + TEST_LABELS).toString());
+        float[][] trainImages = readImages(Keras.path(LOCAL_PREFIX, TRAIN_IMAGES).toString());
+        float[][] trainLabels = readLabelsOneHot(Keras.path(LOCAL_PREFIX, TRAIN_LABELS).toString());
+        float[][] testImages = readImages(Keras.path(LOCAL_PREFIX, TEST_IMAGES).toString());
+        float[][] testLabels = readLabelsOneHot(Keras.path(LOCAL_PREFIX + TEST_LABELS).toString());
 
         // Return a pair of graph loaders; train and test sets
         return new Pair<>(
-                new GraphModeTensorFrame<>(
+                new GraphTensorArrayDataset<>(
                         graph, Float.class, Tensors.create(trainImages), Tensors.create(trainLabels)),
-                new GraphModeTensorFrame<>(
+                new GraphTensorArrayDataset<>(
                         graph, Float.class, Tensors.create(testImages), Tensors.create(testLabels)));
     }
 
-    public static Pair<GraphLoader<Float>, GraphLoader<Float>> graphLoaders2D(Graph graph) throws IOException {
+    public static Pair<GraphTensorArrayDataset<Float>, GraphTensorArrayDataset<Float>> graphLoaders2D(Graph graph) throws IOException, NoSuchAlgorithmException {
         // Download MNIST files if they don't exist.
         MNIST.download();
 
         // Read data files into arrays
-        float[][][] trainImages = readImages2D(Keras.kerasPath(LOCAL_PREFIX, TRAIN_IMAGES).toString());
-        float[][] trainLabels = readLabelsOneHot(Keras.kerasPath(LOCAL_PREFIX, TRAIN_LABELS).toString());
-        float[][][] testImages = readImages2D(Keras.kerasPath(LOCAL_PREFIX, TEST_IMAGES).toString());
-        float[][] testLabels = readLabelsOneHot(Keras.kerasPath(LOCAL_PREFIX + TEST_LABELS).toString());
+        float[][][] trainImages = readImages2D(Keras.path(LOCAL_PREFIX, TRAIN_IMAGES).toString());
+        float[][] trainLabels = readLabelsOneHot(Keras.path(LOCAL_PREFIX, TRAIN_LABELS).toString());
+        float[][][] testImages = readImages2D(Keras.path(LOCAL_PREFIX, TEST_IMAGES).toString());
+        float[][] testLabels = readLabelsOneHot(Keras.path(LOCAL_PREFIX + TEST_LABELS).toString());
 
         // Return a pair of graph loaders; train and test sets
         return new Pair<>(
-                new GraphModeTensorFrame<>(
+                new GraphTensorArrayDataset<>(
                         graph, Float.class, Tensors.create(trainImages), Tensors.create(trainLabels)),
-                new GraphModeTensorFrame<>(
+                new GraphTensorArrayDataset<>(
                         graph, Float.class, Tensors.create(testImages), Tensors.create(testLabels)));
     }
 

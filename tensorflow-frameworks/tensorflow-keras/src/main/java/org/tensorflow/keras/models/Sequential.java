@@ -2,11 +2,10 @@ package org.tensorflow.keras.models;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import org.tensorflow.*;
-import org.tensorflow.data.GraphLoader;
+import org.tensorflow.data.GraphTensorArrayDataset;
 import org.tensorflow.keras.callbacks.Callback;
 import org.tensorflow.keras.layers.Input;
 import org.tensorflow.keras.layers.Layer;
@@ -96,7 +95,7 @@ public class Sequential<T extends Number> extends Model<T> {
         this.optimizer.build(tf, dtype);
     }
 
-    public void fit(Ops tf, Graph graph, GraphLoader<T> train, GraphLoader<T> test, int epochs, int batchSize,
+    public void fit(Ops tf, Graph graph, GraphTensorArrayDataset<T> train, GraphTensorArrayDataset<T> test, int epochs, int batchSize,
                     List<Callback> callbacks) {
         try (Session session = new Session(graph)) {
             runTrainingLoop(tf, session, train, epochs, batchSize, callbacks, true);
@@ -104,12 +103,12 @@ public class Sequential<T extends Number> extends Model<T> {
         }
     }
 
-    private void runPredictionLoop(Ops tf, Session session, GraphLoader<T> data, int batchSize, List<Callback> callbacks) {
+    private void runPredictionLoop(Ops tf, Session session, GraphTensorArrayDataset<T> data, int batchSize, List<Callback> callbacks) {
         runTrainingLoop(tf, session, data, 1, batchSize, callbacks, false);
     }
 
-    private void runTrainingLoop(Ops tf, Session session, GraphLoader<T> data, int epochs, int batchSize,
-            List<Callback> callbacks, boolean training) {
+    private void runTrainingLoop(Ops tf, Session session, GraphTensorArrayDataset<T> data, int epochs, int batchSize,
+                                 List<Callback> callbacks, boolean training) {
 
         data.batch(batchSize);
         data.build(tf);
@@ -161,7 +160,7 @@ public class Sequential<T extends Number> extends Model<T> {
                 }
 
                 runner = session.runner();
-                data.addBatchToSessionRunner(tf, runner, i, false);
+                data.feedBatchToSessionRunner(tf, runner, i, false);
 
                 if (training) {
                     for (Operand<T> op : minimize) {

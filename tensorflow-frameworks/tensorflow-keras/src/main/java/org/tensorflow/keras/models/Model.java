@@ -1,7 +1,7 @@
 package org.tensorflow.keras.models;
 
 import org.tensorflow.Graph;
-import org.tensorflow.data.GraphLoader;
+import org.tensorflow.data.GraphTensorArrayDataset;
 import org.tensorflow.keras.callbacks.Callback;
 import org.tensorflow.keras.callbacks.Callbacks;
 import org.tensorflow.keras.layers.Layer;
@@ -37,18 +37,18 @@ public abstract class Model<T extends Number> extends Layer<T> {
         compile(tf, compilerBuilder.getOptimizer(), compilerBuilder.loss, compilerBuilder.metrics);
     }
 
-    public void fit(Ops tf, Graph graph, GraphLoader<T> train, GraphLoader<T> test, int epochs, int batchSize) {
+    public void fit(Ops tf, Graph graph, GraphTensorArrayDataset<T> train, GraphTensorArrayDataset<T> test, int epochs, int batchSize) {
         fit(tf, graph, train, test, epochs, batchSize, Callbacks.baseCallback);
     }
 
-    public void fit(Ops tf, Graph graph, GraphLoader<T> train, GraphLoader<T> test, int epochs, int batchSize, Callbacks... callbacks) {
+    public void fit(Ops tf, Graph graph, GraphTensorArrayDataset<T> train, GraphTensorArrayDataset<T> test, int epochs, int batchSize, Callbacks... callbacks) {
         fit(tf, graph, train, test, epochs, batchSize, Arrays.stream(callbacks).map(Callbacks::select).collect(Collectors.toList()));
     }
 
 
-    public abstract void fit(Ops tf, Graph graph, GraphLoader<T> train, GraphLoader<T> test, int epochs, int batchSize, List<Callback> callbacks);
+    public abstract void fit(Ops tf, Graph graph, GraphTensorArrayDataset<T> train, GraphTensorArrayDataset<T> test, int epochs, int batchSize, List<Callback> callbacks);
 
-    public void fit(Ops tf, Graph graph, GraphLoader<T> train, GraphLoader<T> test, FitOptions fitOptions) {
+    public void fit(Ops tf, Graph graph, GraphTensorArrayDataset<T> train, GraphTensorArrayDataset<T> test, FitOptions fitOptions) {
         fit(tf, graph, train, test, fitOptions.epochs, fitOptions.batchSize, fitOptions.callbacks);
     }
 

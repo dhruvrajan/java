@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Utility to keep track of unique IDs for tensors.
+ * Utility to keep track of unique IDs for graph variables.
  */
 public class State {
     private static long UNIQUE_TENSOR_ID = 0L;

@@ -7,44 +7,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.security.NoSuchAlgorithmException;
 
 public class DataUtils {
-    public enum Checksum {
-        md5, sha256
-    }
 
-    public static String hashFile(String fpath, Checksum algorithm) throws IOException {
-        MessageDigest instance = null;
-
-        try {
-            String alg = (algorithm == Checksum.sha256) ? "SHA-256" : "MD5";
-            instance = MessageDigest.getInstance(alg);
-        } catch (Exception e) {
-            throw new IllegalArgumentException(
-                    "Hash algorithm " + algorithm + " not found. Must be 'sha256' or 'md5'");
-        }
-
+    public static String hashFile(String fpath, String algorithm) throws IOException, NoSuchAlgorithmException {
+        MessageDigest instance = MessageDigest.getInstance(algorithm);
         byte[] digest = digest(Paths.get(fpath), instance);
         return toHexString(digest);
     }
 
-    /**
-     * Downloads a file from a url.
-     *
-     * <p>TODO: extract options .tar.gz, .zip
-     *
-     * @param fname    Name of the file.
-     * @param origin   Original url of the file.
-     * @param fileHash The expected hash string of the file after loadData.
-     * @throws IOException
-     */
-    public static void getFile(String fname, String origin, String fileHash, Checksum algorithm)
-            throws IOException {
-
-        File localFile = Keras.kerasPath(fname).toFile();
+    public static void getFile(String fname, String origin, String fileHash, String algorithm) throws IOException, NoSuchAlgorithmException {
+        File localFile = Keras.path(fname).toFile();
         File directory = localFile.getParentFile();
         if (!directory.isDirectory()) directory.mkdirs();
 
@@ -56,25 +30,22 @@ public class DataUtils {
                     return;
                 } else {
                     System.out.println(fname + " exists but is corrupted. Re-downloading...");
-                    return;
                 }
             }
         }
 
         System.out.println("Downloading " + localFile + " from " + origin);
-        download(origin, localFile.toString());
+//        download(origin, localFile.toString());
 
-        if (false &&  fileHash != null && algorithm != null) {
+        if (false && fileHash != null && algorithm != null) {
             String calculateHash = hashFile(localFile.getPath(), algorithm);
             if (!calculateHash.equals(fileHash)) {
-                System.out.println(fileHash);
-                System.out.println(calculateHash);
                 throw new IOException("Download failed, check origin url: " + origin);
             }
         }
     }
 
-    public static void getFile(String fname, String origin) throws IOException {
+    public static void getFile(String fname, String origin) throws IOException, NoSuchAlgorithmException {
         getFile(fname, origin, null, null);
     }
 
