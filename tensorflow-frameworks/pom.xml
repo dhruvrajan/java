@@ -21,6 +21,7 @@
   <modules>
     <module>tensorflow-data</module>
     <module>tensorflow-keras</module>
+    <module>tensorflow-data</module>
   </modules>
 
 </project>
