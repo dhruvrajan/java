@@ -3,7 +3,10 @@ package org.tensorflow.keras.utils;
 import org.tensorflow.Tensor;
 import org.tensorflow.types.TFloat;
 
+import java.io.File;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;

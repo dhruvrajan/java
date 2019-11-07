@@ -1,6 +1,6 @@
 //package org.tensorflow.data;
 //
-//import org.junit.jupiter.api.Test;
+//import org.junit.Test;
 //import org.tensorflow.*;
 //import org.tensorflow.op.Ops;
 //
@@ -8,7 +8,7 @@
 //import java.util.Iterator;
 //import java.util.List;
 //
-//import static org.junit.jupiter.api.Assertions.assertEquals;
+//import static org.junit.Assert.assertEquals;
 //
 //class GraphModeTensorFrameTest {
 //    @Test
