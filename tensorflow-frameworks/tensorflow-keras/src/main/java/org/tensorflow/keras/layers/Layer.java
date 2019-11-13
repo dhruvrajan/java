@@ -83,6 +83,7 @@ public abstract class Layer<T extends Number> implements LayerFunction<T> {
      * @param inputs
      * @return
      */
+    @Override
     @SafeVarargs
     public final Operand<T> apply(Ops tf, Operand<T>... inputs) {
         if (!this.built) {
@@ -138,17 +139,12 @@ public abstract class Layer<T extends Number> implements LayerFunction<T> {
         return new ArrayList<>(this.initializerOps.values());
     }
 
-
     public List<Variable<T>> trainableWeights() {
         return new ArrayList<>(this.weights.values());
     }
 
     public boolean isBuilt() {
         return this.built;
-    }
-
-    public boolean hasDtype() {
-      return this.dtype != null;
     }
 
     public Class<T> getDtype() {
