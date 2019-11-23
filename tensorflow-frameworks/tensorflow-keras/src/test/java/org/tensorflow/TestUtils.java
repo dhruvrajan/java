@@ -5,6 +5,7 @@ import org.tensorflow.keras.utils.Keras;
 import org.tensorflow.op.Ops;
 import org.tensorflow.op.core.Constant;
 import org.tensorflow.op.core.Placeholder;
+import org.tensorflow.op.data.BatchDataset;
 
 import java.util.function.BiFunction;
 
@@ -14,6 +15,7 @@ import static org.junit.Assert.assertTrue;
 public class TestUtils {
     public static <T> boolean transformedTensorEquals(Class<T> dtype, Tensor<T> tensor, Tensor<T> expect,
                                                       BiFunction<Ops, Operand<T>, Operand<T>> transform) {
+
         try (Graph graph = new Graph()) {
             Ops tf = Ops.create(graph);
 
