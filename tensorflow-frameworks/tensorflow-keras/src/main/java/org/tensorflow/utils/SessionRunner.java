@@ -3,6 +3,7 @@ package org.tensorflow.utils;
 import org.tensorflow.Operand;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
+import org.tensorflow.data.Pair;
 
 import java.util.List;
 
