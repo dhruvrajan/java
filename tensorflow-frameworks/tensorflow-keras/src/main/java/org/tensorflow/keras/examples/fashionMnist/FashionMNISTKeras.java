@@ -11,7 +11,7 @@
 //import org.tensorflow.keras.models.Sequential;
 //import org.tensorflow.keras.optimizers.Optimizers;
 //import org.tensorflow.op.Ops;
-//import org.tensorflow.utils.Pair;
+//import org.tensorflow.data.Pair;
 //
 //import static org.tensorflow.keras.layers.Layers.*;
 //
