@@ -12,7 +12,7 @@
 //import org.tensorflow.keras.models.Sequential;
 //import org.tensorflow.keras.optimizers.GradientDescentOptimizer;
 //import org.tensorflow.op.Ops;
-//import org.tensorflow.utils.Pair;
+//import org.tensorflow.data.Pair;
 //
 //public class IrisClassifier {
 //    private static final int INPUT_SIZE = 4;

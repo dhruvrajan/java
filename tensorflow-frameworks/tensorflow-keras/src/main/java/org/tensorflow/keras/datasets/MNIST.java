@@ -6,7 +6,7 @@
 //import org.tensorflow.keras.utils.Keras;
 //import org.tensorflow.op.Ops;
 //import org.tensorflow.op.core.Constant;
-//import org.tensorflow.utils.Pair;
+//import org.tensorflow.data.Pair;
 //
 //import java.io.DataInputStream;
 //import java.io.FileInputStream;
