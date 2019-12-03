@@ -14,7 +14,7 @@
 //import org.tensorflow.keras.optimizers.GradientDescentOptimizer;
 //import org.tensorflow.keras.optimizers.Optimizer;
 //import org.tensorflow.op.Ops;
-//import org.tensorflow.utils.Pair;
+//import org.tensorflow.data.Pair;
 //
 //import java.io.IOException;
 //import java.util.List;
