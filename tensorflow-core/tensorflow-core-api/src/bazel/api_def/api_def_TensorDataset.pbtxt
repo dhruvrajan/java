@@ -1,5 +1,6 @@
 op {
   graph_op_name: "TensorDataset"
+  visibility: SKIP
   endpoint {
     name: "data.TensorDataset"
   }
