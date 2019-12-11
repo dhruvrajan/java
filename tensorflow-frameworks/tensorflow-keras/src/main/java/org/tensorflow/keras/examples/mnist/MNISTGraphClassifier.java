@@ -1,12 +1,14 @@
 package org.tensorflow.keras.examples.mnist;
 
-import org.tensorflow.Shape;
 import org.tensorflow.*;
 import org.tensorflow.data.Dataset;
 import org.tensorflow.data.Pair;
 import org.tensorflow.keras.datasets.MNIST;
 import org.tensorflow.op.Ops;
-import org.tensorflow.op.core.*;
+import org.tensorflow.op.core.Assign;
+import org.tensorflow.op.core.Constant;
+import org.tensorflow.op.core.Gradients;
+import org.tensorflow.op.core.Variable;
 import org.tensorflow.op.math.Mean;
 import org.tensorflow.op.nn.Softmax;
 import org.tensorflow.op.train.ApplyGradientDescent;
@@ -16,10 +18,9 @@ import org.tensorflow.utils.Tuple2;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-public class MNISTClassifier implements Runnable {
+public class MNISTGraphClassifier implements Runnable {
     private static final int INPUT_SIZE = 28 * 28;
 
     private static final float LEARNING_RATE = 0.2f;
@@ -29,7 +30,7 @@ public class MNISTClassifier implements Runnable {
     private static final int BATCH_SIZE = 100;
 
     public static void main(String[] args) {
-        MNISTClassifier mnist = new MNISTClassifier();
+        MNISTGraphClassifier mnist = new MNISTGraphClassifier();
         mnist.run();
     }
 
@@ -37,8 +38,8 @@ public class MNISTClassifier implements Runnable {
         try (Graph graph = new Graph()) {
 
             Ops tf = Ops.create(graph);
-
             Tuple2<Pair<float[][][], float[][]>> data = MNIST.loadData();
+
             Dataset train = Dataset.fromTensorSlices(tf,
                     Arrays.asList(
                             Constant.create(tf.scope(), data.first().first()),
