@@ -8,7 +8,6 @@ import org.tensorflow.utils.Tuple2;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.FloatBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
@@ -64,28 +63,6 @@ public class MNIST {
         return new Tuple2<>(Pair.of(trainImages, trainLabels), Pair.of(testImages, testLabels));
     }
 
-    /**
-     * Reads MNIST images into an array, given the image datafile path.
-     *
-     * @param imagesPath MNIST image datafile path
-     * @return an array of shape (# examples, # pixels) containing the image data
-     * @throws IOException when the file reading fails.
-     */
-    static float[][] readImages(String imagesPath) throws IOException {
-        try (DataInputStream inputStream =
-                     new DataInputStream(new GZIPInputStream(new FileInputStream(imagesPath)))) {
-
-            if (inputStream.readInt() != IMAGE_MAGIC) {
-                throw new IllegalArgumentException("Invalid Image Data File");
-            }
-
-            int numImages = inputStream.readInt();
-            int rows = inputStream.readInt();
-            int cols = inputStream.readInt();
-
-            return readImageBuffer(inputStream, numImages, rows * cols);
-        }
-    }
 
     static float[][][] readImages2D(String imagesPath) throws IOException {
         try (DataInputStream inputStream =
@@ -99,7 +76,7 @@ public class MNIST {
             int rows = inputStream.readInt();
             int cols = inputStream.readInt();
 
-            return readImageBuffer2D(inputStream, numImages, rows);
+            return readImageBuffer2D(inputStream, numImages, rows, cols);
         }
     }
 
@@ -123,79 +100,6 @@ public class MNIST {
         }
     }
 
-    public static FloatBuffer readImagesToFloatBuffer(String imagesPath) throws IOException {
-        try (DataInputStream inputStream =
-                     new DataInputStream(new GZIPInputStream(new FileInputStream(imagesPath)))) {
-
-            if (inputStream.readInt() != IMAGE_MAGIC) {
-                throw new IllegalArgumentException("Invalid Image Data File");
-            }
-
-            int numImages = inputStream.readInt();
-            int rows = inputStream.readInt();
-            int cols = inputStream.readInt();
-
-            FloatBuffer images = FloatBuffer.allocate(numImages * rows * cols);
-            readLabelBytesToFloatBuffer(inputStream, images, images.capacity());
-            return images;
-        }
-    }
-
-    public static FloatBuffer readLabelsToFloatBuffer(String labelsPath) throws IOException {
-        try (DataInputStream inputStream =
-                     new DataInputStream(new GZIPInputStream(new FileInputStream(labelsPath)))) {
-
-            if (inputStream.readInt() != LABELS_MAGIC) {
-                throw new IllegalArgumentException("Invalid Label Data File");
-            }
-
-            int numLabels = inputStream.readInt();
-
-            FloatBuffer labels = FloatBuffer.allocate(numLabels * OUTPUT_CLASSES);
-            readLabelBytesToFloatBuffer(inputStream, labels, numLabels);
-            return labels;
-        }
-    }
-
-    public static void readLabelBytesToFloatBuffer(DataInputStream inputStream, FloatBuffer fb, int numBytes) throws IOException {
-        // Read Bytes
-        byte[] bytes = new byte[numBytes];
-        inputStream.readFully(bytes);
-
-        // Convert Bytes to Float Labels
-        float[] floats = new float[numBytes * OUTPUT_CLASSES];
-        for (int i = 0; i < numBytes; i++) {
-            int label = bytes[i] & 0xFF;
-            float[] labelOneHot = labelToOneHotVector(label, true);
-            for (int j = 0; j < labelOneHot.length; j++) {
-                floats[i + j] = labelOneHot[j];
-            }
-        }
-        // Write floats to buffer
-        fb.put(floats);
-    }
-
-    public static void readImageBytesToFloatBuffer(DataInputStream inputStream, FloatBuffer fb, int numBytes) throws IOException {
-        // Read Bytes
-        byte[] bytes = new byte[numBytes];
-        inputStream.readFully(bytes);
-
-        // Convert Bytes to Floats
-        float[] floats = new float[numBytes];
-        for (int i = 0; i < numBytes; i++) {
-            floats[i] = bytes[i] & 0xFF;
-        }
-
-        // Write floats to buffer
-        fb.put(floats);
-    }
-
-    private static byte[] readBytes(DataInputStream inputStream, int numBytes) throws IOException {
-        byte[] bytes = new byte[numBytes];
-        inputStream.readFully(bytes);
-        return bytes;
-    }
-
     private static byte[][] readBatchedBytes(DataInputStream inputStream, int batches, int bytesPerBatch) throws IOException {
         byte[][] entries = new byte[batches][bytesPerBatch];
         for (int i = 0; i < batches; i++) {
@@ -205,28 +109,16 @@ public class MNIST {
     }
 
     private static float[][][] readImageBuffer2D(
-            DataInputStream inputStream, int numImages, int imageWidth) throws IOException {
-        float[][][] unsignedEntries = new float[numImages][imageWidth][imageWidth];
+            DataInputStream inputStream, int numImages, int imageWidth, int imageHeight) throws IOException {
+        float[][][] unsignedEntries = new float[numImages][imageWidth][imageHeight];
         for (int i = 0; i < unsignedEntries.length; i++) {
-            byte[][] entries = readBatchedBytes(inputStream, imageWidth, imageWidth);
+            byte[][] entries = readBatchedBytes(inputStream, imageWidth, imageHeight);
             for (int j = 0; j < unsignedEntries[0].length; j++) {
                 for (int k = 0; k < unsignedEntries[0][0].length; k++) {
                     unsignedEntries[i][j][k] = (float) (entries[j][k] & 0xFF) / 255.0f;
                 }
             }
         }
-        return unsignedEntries;
-    }
-
-    private static float[][] readImageBuffer(DataInputStream inputStream, int numImages, int imageSize) throws IOException {
-        byte[][] entries = readBatchedBytes(inputStream, numImages, imageSize);
-        float[][] unsignedEntries = new float[numImages][imageSize];
-        for (int i = 0; i < unsignedEntries.length; i++) {
-            for (int j = 0; j < unsignedEntries[0].length; j++) {
-                unsignedEntries[i][j] = (float) (entries[i][j] & 0xFF) / 255.0f;
-            }
-        }
-
         return unsignedEntries;
     }
 
@@ -249,16 +141,5 @@ public class MNIST {
 
         if (fill) Arrays.fill(oneHot, 0);
         oneHot[label] = 1.0f;
-    }
-
-    private static float[] labelToOneHotVector(int label, boolean fill) {
-        float[] oneHot = new float[OUTPUT_CLASSES];
-        if (label >= oneHot.length) {
-            throw new IllegalArgumentException("Invalid Index for One-Hot Vector");
-        }
-
-        if (fill) Arrays.fill(oneHot, 0);
-        oneHot[label] = 1.0f;
-        return oneHot;
     }
 }
