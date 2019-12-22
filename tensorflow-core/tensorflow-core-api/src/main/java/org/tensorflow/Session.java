@@ -16,6 +16,7 @@ limitations under the License.
 package org.tensorflow;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -158,6 +159,19 @@ public final class Session implements AutoCloseable {
       return this;
     }
 
+    public Runner feed(Iterable<Operand<?>> operands, Iterable<Tensor<?>> tensors) {
+        Iterator<Operand<?>> operandsIterator = operands.iterator();
+        Iterator<Tensor<?>> tensorsIterator = tensors.iterator();
+
+        while (operandsIterator.hasNext() && tensorsIterator.hasNext())
+            feed(operandsIterator.next(), tensorsIterator.next());
+
+        if (operandsIterator.hasNext() || tensorsIterator.hasNext())
+            throw new IllegalArgumentException("Number of fed operands must equal number of fed tensors.");
+
+        return this;
+    }
+
     /**
      * Make {@link #run()} return the output of {@code operation}.
      *
@@ -201,6 +215,13 @@ public final class Session implements AutoCloseable {
       return fetch(operand.asOutput());
     }
 
+    public Runner fetch(Iterable<Operand<?>> operands) {
+        for (Operand<?> op : operands)
+            fetch(op);
+
+        return this;
+    }
+
     /**
      * Make {@link #run()} execute {@code operation}, but not return any evaluated {@link Tensor
      * Tensors}.
@@ -236,6 +257,14 @@ public final class Session implements AutoCloseable {
      */
     public Runner addTarget(Operand<?> operand) {
       return addTarget(operand.asOutput().op());
+    }
+
+    public Runner addTargets(Iterable<Operand<?>> operands) {
+        for (Operand<?> op : operands) {
+            addTarget(op);
+        }
+
+        return this;
     }
 
     /**

@@ -76,7 +76,7 @@ public final class Output<T extends TType> implements Operand<T> {
   }
 
   @Override
-  public int hashCode() {
+      public int hashCode() {
     return Objects.hash(operation, index);
   }
 

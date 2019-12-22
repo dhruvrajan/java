@@ -3,7 +3,7 @@ package org.tensorflow.keras.datasets;
 import org.tensorflow.data.Pair;
 import org.tensorflow.keras.utils.DataUtils;
 import org.tensorflow.keras.utils.Keras;
-import org.tensorflow.utils.Tuple2;
+import org.tensorflow.data.Tuple2;
 
 import java.io.DataInputStream;
 import java.io.FileInputStream;

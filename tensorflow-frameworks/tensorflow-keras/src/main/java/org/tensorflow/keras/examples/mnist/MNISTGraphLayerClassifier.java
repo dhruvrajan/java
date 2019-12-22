@@ -2,10 +2,8 @@
 //
 //import org.tensorflow.*;
 //import org.tensorflow.data.Dataset;
-//import org.tensorflow.keras.activations.Activations;
+//import org.tensorflow.data.Pair;
 //import org.tensorflow.keras.datasets.MNIST;
-//import org.tensorflow.keras.layers.Dense;
-//import org.tensorflow.keras.layers.Input;
 //import org.tensorflow.keras.losses.Loss;
 //import org.tensorflow.keras.losses.Losses;
 //import org.tensorflow.keras.metrics.Metric;
@@ -13,16 +11,11 @@
 //import org.tensorflow.keras.optimizers.GradientDescentOptimizer;
 //import org.tensorflow.keras.optimizers.Optimizer;
 //import org.tensorflow.op.Ops;
-//import org.tensorflow.data.Pair;
 //import org.tensorflow.op.core.Constant;
-//import org.tensorflow.op.core.Iterator;
-//import org.tensorflow.op.data.MakeIterator;
-//import org.tensorflow.utils.Tuple2;
+//import org.tensorflow.data.Tuple2;
 //
 //import java.io.IOException;
-//import java.lang.reflect.Array;
 //import java.util.Arrays;
-//import java.util.Collection;
 //import java.util.List;
 //
 //public class MNISTLayerClassifier {

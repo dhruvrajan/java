@@ -13,7 +13,7 @@ import org.tensorflow.op.math.Mean;
 import org.tensorflow.op.nn.Softmax;
 import org.tensorflow.op.train.ApplyGradientDescent;
 import org.tensorflow.utils.TensorShape;
-import org.tensorflow.utils.Tuple2;
+import org.tensorflow.data.Tuple2;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;

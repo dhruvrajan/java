@@ -1,4 +1,4 @@
-package org.tensorflow.utils;
+package org.tensorflow.data;
 
 public class Tuple3<T> {
     private T first;

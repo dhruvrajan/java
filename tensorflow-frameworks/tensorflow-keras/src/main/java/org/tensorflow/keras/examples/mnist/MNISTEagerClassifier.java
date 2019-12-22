@@ -14,7 +14,7 @@ import org.tensorflow.op.core.Variable;
 import org.tensorflow.op.math.Mean;
 import org.tensorflow.op.nn.Softmax;
 import org.tensorflow.utils.TensorShape;
-import org.tensorflow.utils.Tuple2;
+import org.tensorflow.data.Tuple2;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -61,7 +61,8 @@ public class MNISTEagerClassifier implements Runnable {
                 for (List<Output<?>> batch : train.asIterable(tf)) {
                     Operand<Float> images2D = tf.dtypes.cast(batch.get(0), Float.class);
                     TensorShape tensorShape = new TensorShape(images2D.asOutput().shape());
-                    Operand<Float> images = tf.reshape(images2D, Constant.create(tf.scope(), new int[]{-1, (int) (tensorShape.numElements() / Math.abs(tensorShape.size(0)))}));
+                    Operand<Float> images = tf.reshape(images2D,
+                            Constant.create(tf.scope(), new int[]{-1, (int) (tensorShape.numElements() / Math.abs(tensorShape.size(0)))}));
                     Operand<Float> labels = tf.dtypes.cast(batch.get(1), Float.class);
 
                     Softmax<Float> softmax = tf.nn.softmax(tf.math.add(tf.linalg.matMul(images, weights), biases));

@@ -1,4 +1,4 @@
-package org.tensorflow.utils;
+package org.tensorflow.data;
 
 import org.tensorflow.data.Pair;
 

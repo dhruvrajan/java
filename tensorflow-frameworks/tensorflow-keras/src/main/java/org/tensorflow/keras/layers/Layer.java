@@ -1,137 +1,100 @@
-// package org.tensorflow.keras.layers;
+//package org.tensorflow.keras.layers;
 //
-// import org.tensorflow.Operand;
-// import org.tensorflow.Shape;
-// import org.tensorflow.keras.initializers.Initializer;
-// import org.tensorflow.op.Ops;
-// import org.tensorflow.op.core.Assign;
-// import org.tensorflow.op.core.Variable;
+//import org.tensorflow.Operand;
+//import org.tensorflow.Shape;
+//import org.tensorflow.keras.initializers.Initializer;
+//import org.tensorflow.op.Ops;
+//import org.tensorflow.op.core.Assign;
+//import org.tensorflow.op.core.Variable;
 //
-// import java.util.*;
+//import java.util.*;
 //
-// /**
-//  * Base layer class.
-//  *
-//  * <p>A layer implements common neural network operations, such as convolution, batch norm, etc.
-//  * These operations require managing weights, losses, updates, and inter-layer connectivity.
-//  */
-// public abstract class Layer {
-//     private int numInputs;
-//     private int numOutputs;
+///**
+// * Base layer class.
+// *
+// * <p>A layer implements common neural network operations, such as convolution, batch norm, etc.
+// * These operations require managing weights, losses, updates, and inter-layer connectivity.
+// */
+//public abstract class Layer<T extends Number> {
+//    // Input() layer needs to access dtype and built.
+//    protected Class<T> dtype;
+//    protected boolean built;
 //
-//     // Input() layer needs to access dtype and built.
-//     protected boolean built;
+//    private Map<String, LayerVariable<T>> weights;
+//    private List<LayerVariable<T>> trainableWeights;
+//    private List<LayerVariable<T>> nonTrainableWeights;
 //
-//     private Map<String, Variable<?>> weights;
-//     private Map<String, Assign<?>> initializerOps;
+//    public Layer() {
+//        this.built = false;
+//    }
 //
-//     public Layer(int numInputs, int numOutputs) {
-//         this.numInputs = numInputs;
-//         this.numOutputs = numOutputs;
+//    /**
+//     * Override create(Ops) to add variables (weight tensors) to the layer.
+//     * <p>
+//     * The addWeight function and some tf ops require passing a Class<T> "dtype" object
+//     * <p>
+//     * To get the dtype of this layer in the build function, use Layer.getDtype()
+//     *
+//     * @param tf Tensorflow Ops accessor
+//     */
+//    protected abstract void build(Ops tf, List<Shape> inputShape);
 //
-//         this.built = false;
-//         this.weights = new HashMap<>();
-//         this.initializerOps = new HashMap<>();
-//     }
+//    /**
+//     * Computes the output shape of the tensor returned by a Layer from the input tensor's shape
+//     *
+//     * @param inputShapes Shape of an input tensor to this layer
+//     * @return Shape of the tensor that would be returned by `apply`.
+//     */
+//    public abstract List<Shape> computeOutputShape(List<Shape> inputShapes);
 //
-//     /**
-//      * Override create(Ops) to add variables (weight tensors) to the layer.
-//      *
-//      * The addWeight function and some tf ops require passing a Class<T> "dtype" object
-//      *
-//      * To get the dtype of this layer in the build function, use Layer.getDtype()
-//      *
-//      * @param tf         Tensorflow Ops accessor
-//      */
-//     protected abstract void build(Ops tf, List<Class<?>> inputTypes, List<Shape> inputShapes);
+//    /**
+//     * Defines the layer's logic, in terms of input operands, and variables.
+//     *
+//     * @param tf     Tensorflow Ops accessor.
+//     * @param inputs A sequence of TF Operands
+//     * @return The transformed input tensors, according to the layer's logic.
+//     */
+//    protected abstract List<Operand<?>> call(Ops tf, Operand<?>... inputs);
 //
-//     /**
-//      * Computes the output shape of the tensor returned by a Layer from the input tensor's shape
-//      *
-//      * @param inputShapes Shape of an input tensor to this layer
-//      * @return Shape of the tensor that would be returned by `apply`.
-//      */
-//     public abstract List<Shape> computeOutputShape(List<Shape> inputShapes);
+//    /**
+//     * Internal wrapper for Layer.call
+//     */
+//    public final List<Operand<?>> apply(Ops tf, Operand<?>... inputs) {
+//        if (!this.built) {
+//            throw new IllegalStateException(
+//                    "Layer.call() cannot be called before the layer is built (Layer.build())");
+//        }
 //
-//     /**
-//      * Defines the layer's logic, in terms of input operands, and variables.
-//      *
-//      * @param tf     Tensorflow Ops accessor.
-//      * @param inputs A sequence of TF Operands
-//      * @return The transformed input tensors, according to the layer's logic.
-//      */
-//     protected abstract List<Operand<?>> call(Ops tf, Operand<?>... inputs);
+//        return this.call(tf, inputs);
+//    }
 //
+//    protected final Variable<T> addWeight(Ops tf, String name, Shape shape, Initializer initializer, boolean trainable) {
+//        Variable<T> variable = tf.variable(shape, dtype);
+//        LayerVariable<T> layerVariable = new LayerVariable<>(variable, initializer.apply(tf, variable, variable.asOutput().dataType().asJavaClass()), trainable);
 //
-//     /**
-//      * Internal wrapper for Layer.call
-//      */
-//     public final List<Operand<?>> apply(Ops tf, Operand<?>... inputs) {
-//         if (!this.built) {
-//             throw new IllegalStateException(
-//                     "Layer.call() cannot be called before the layer is built (Layer.build())");
-//         }
+//        this.weights.put(name, layerVariable);
+//        if (trainable) {
+//            this.trainableWeights.add(layerVariable);
+//        } else {
+//            this.nonTrainableWeights.add(layerVariable);
+//        }
 //
-//         if (inputs.length != numInputs) {
-//             throw new IllegalArgumentException(
-//                     "Layer call() expected " + numInputs + "inputs; received " + inputs.length + ".");
-//         }
+//        return variable;
+//    }
 //
-//         List<Operand<?>> outputs = this.call(tf, inputs);
+//    public boolean isBuilt() {
+//        return this.built;
+//    }
+//}
 //
-//         if (outputs.size() != numOutputs) {
-//             throw new IllegalArgumentException(("Expected Layer.call() to produce "
-//                     + numOutputs + " outputs; but found " + outputs.size() + "."));
-//         }
+//class LayerVariable<T> {
+//    Variable<T> variable;
+//    Assign<T> initializer;
+//    boolean trainable;
 //
-//         return outputs;
-//     }
-//
-//     /**
-//      * Adds a new weight tensor to the layer
-//      *
-//      * @param name     variable name
-//      * @param variable variable to add
-//      * @return the created variable.
-//      */
-//     protected final Variable<?> addWeight(String name, Variable<?> variable) {
-//         this.weights.put(name, variable);
-//         return variable;
-//     }
-//
-////     /**
-////      * Adds a new weight tensor to the layer
-////      *
-////      * @param name     variable name
-////      * @param variable variable to add
-////      * @return the created variable.
-////      */
-////     protected final Variable<?> addWeight(Ops tf, String name, Variable<?> variable, String initializerName, Initializers initializer) {
-////         return addWeight(tf, name, variable, initializerName, Initializers.select(initializer));
-////     }
-////
-////     /**
-////      * Adds a new weight tensor to the layer
-////      *
-////      * @param name     variable name
-////      * @param variable variable to add
-////      * @return the created variable.
-////      */
-////     protected final Variable<?> addWeight(Ops tf, String name, Variable<?> variable, String initializerName, Initializer initializer) {
-////         this.weights.put(name, variable);
-////         this.initializerOps.put(initializerName, initializer.apply(tf, variable, dtype));
-////         return variable;
-////     }
-//
-//     public List<Operand<?>> initializerOps() {
-//         return new ArrayList<>(this.initializerOps.values());
-//     }
-//
-//     public List<Variable<?>> trainableWeights() {
-//         return new ArrayList<>(this.weights.values());
-//     }
-//
-//     public boolean isBuilt() {
-//         return this.built;
-//     }
-// }
+//    public LayerVariable(Variable<T> variable, Assign<T> initializer, boolean trainable) {
+//        this.variable = variable;
+//        this.initializer = initializer;
+//        this.trainable = trainable;
+//    }
+//}
