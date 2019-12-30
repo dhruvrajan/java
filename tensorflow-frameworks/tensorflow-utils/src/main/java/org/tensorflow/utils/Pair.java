@@ -1,4 +1,4 @@
-package org.tensorflow.data;
+package org.tensorflow.utils;
 
 import java.util.Iterator;
 
