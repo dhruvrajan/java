@@ -1,9 +1,9 @@
 package org.tensorflow.keras.datasets;
 
-import org.tensorflow.data.Pair;
 import org.tensorflow.keras.utils.DataUtils;
 import org.tensorflow.keras.utils.Keras;
 import org.tensorflow.utils.Tuple2;
+import org.tensorflow.utils.Pair;
 
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -50,7 +50,7 @@ public class MNIST {
     }
 
 
-    public static Tuple2<Pair<float[][][], float[][]>> loadData() throws IOException, NoSuchAlgorithmException {
+    public static Pair<Tuple2<float[][][], float[][]>> loadData() throws IOException, NoSuchAlgorithmException {
         // Download MNIST files if they don't exist.
         MNIST.download();
 
@@ -61,7 +61,7 @@ public class MNIST {
         float[][] testLabels = readLabelsOneHot(Keras.path(LOCAL_PREFIX + TEST_LABELS).toString());
 
         // Return a pair of graph loaders; train and test sets
-        return new Tuple2<>(Pair.of(trainImages, trainLabels), Pair.of(testImages, testLabels));
+        return new Pair<>(Tuple2.of(trainImages, trainLabels), Tuple2.of(testImages, testLabels));
     }
 
     /**

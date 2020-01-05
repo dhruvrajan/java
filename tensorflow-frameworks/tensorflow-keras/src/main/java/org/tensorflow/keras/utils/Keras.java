@@ -1,15 +1,5 @@
 package org.tensorflow.keras.utils;
 
-import org.tensorflow.Operand;
-import org.tensorflow.Shape;
-import org.tensorflow.Tensor;
-import org.tensorflow.op.Ops;
-import org.tensorflow.op.core.Constant;
-
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -38,18 +28,6 @@ public class Keras {
     //
     // Keras backend utilties
     //
-    public static Operand<Integer> constArray(Ops tf, int... i) {
-        return Constant.create(tf.scope(), i);
-    }
-
-    public static Operand<Integer> shapeOperand(Ops tf, Shape shape) {
-        int[] shapeArray = new int[shape.numDimensions()];
-        for (int i = 0; i < shapeArray.length; i++) {
-            shapeArray[i] = (int) shape.size(i);
-        }
-
-        return Constant.create(tf.scope(), shapeArray);
-    }
 
     public static long head(long... dims) {
         return dims[0];
@@ -73,33 +51,33 @@ public class Keras {
         return dims;
     }
 
-    public static long[] dimsFromShape(Shape shape) {
-        long[] dims = new long[shape.numDimensions()];
-        for (int i = 0; i < shape.numDimensions(); i++) {
-            dims[i] = shape.size(i);
-        }
-        return dims;
-    }
-
-    public static void printFloatTensor(Tensor<?> tensor) {
-        FloatBuffer buffer = FloatBuffer.allocate(new TensorShape(shapeFromDims(tensor.shape())).numElements());
-        tensor.writeTo(buffer);
-        System.out.println(Arrays.toString(buffer.array()));
-    }
-
-    public static void printIntTensor(Tensor<?> tensor) {
-        IntBuffer buffer = IntBuffer.allocate(new TensorShape(shapeFromDims(tensor.shape())).numElements());
-        tensor.writeTo(buffer);
-        System.out.println(Arrays.toString(buffer.array()));
-    }
-
-    public static void printBoolTensor(Tensor<?> tensor) {
-        ByteBuffer buffer = ByteBuffer.allocate(new TensorShape(shapeFromDims(tensor.shape())).numElements());
-        tensor.writeTo(buffer);
-        System.out.println(Arrays.toString(buffer.array()));
-    }
-
-    public static Shape shapeFromDims(long... dims) {
-        return Shape.make(head(dims), tail(dims));
-    }
+//    public static long[] dimsFromShape(Shape shape) {
+//        long[] dims = new long[shape.numDimensions()];
+//        for (int i = 0; i < shape.numDimensions(); i++) {
+//            dims[i] = shape.size(i);
+//        }
+//        return dims;
+//    }
+//
+//    public static void printFloatTensor(Tensor<?> tensor) {
+//        FloatBuffer buffer = FloatBuffer.allocate(new TensorShape(shapeFromDims(tensor.shape())).numElements());
+//        tensor.writeTo(buffer);
+//        System.out.println(Arrays.toString(buffer.array()));
+//    }
+//
+//    public static void printIntTensor(Tensor<?> tensor) {
+//        IntBuffer buffer = IntBuffer.allocate(new TensorShape(shapeFromDims(tensor.shape())).numElements());
+//        tensor.writeTo(buffer);
+//        System.out.println(Arrays.toString(buffer.array()));
+//    }
+//
+//    public static void printBoolTensor(Tensor<?> tensor) {
+//        ByteBuffer buffer = ByteBuffer.allocate(new TensorShape(shapeFromDims(tensor.shape())).numElements());
+//        tensor.writeTo(buffer);
+//        System.out.println(Arrays.toString(buffer.array()));
+//    }
+//
+//    public static Shape shapeFromDims(long... dims) {
+//        return Shape.make(head(dims), tail(dims));
+//    }
 }
