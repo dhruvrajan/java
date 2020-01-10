@@ -1,5 +1,9 @@
 package org.tensorflow.keras.utils;
 
+import org.tensorflow.Tensor;
+import org.tensorflow.types.TFloat;
+
+import java.nio.FloatBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -59,11 +63,7 @@ public class Keras {
 //        return dims;
 //    }
 //
-//    public static void printFloatTensor(Tensor<?> tensor) {
-//        FloatBuffer buffer = FloatBuffer.allocate(new TensorShape(shapeFromDims(tensor.shape())).numElements());
-//        tensor.writeTo(buffer);
-//        System.out.println(Arrays.toString(buffer.array()));
-//    }
+
 //
 //    public static void printIntTensor(Tensor<?> tensor) {
 //        IntBuffer buffer = IntBuffer.allocate(new TensorShape(shapeFromDims(tensor.shape())).numElements());
