@@ -1,5 +1,5 @@
-package org.tensorflow.keras.types;
+// package org.tensorflow.keras.types;
 
-public enum DataFormat {
-    channelsFirst, channelsLast;
-}
+// public enum DataFormat {
+//     channelsFirst, channelsLast;
+// }
