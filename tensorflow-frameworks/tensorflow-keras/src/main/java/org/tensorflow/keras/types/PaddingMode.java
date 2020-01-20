@@ -1,5 +1,5 @@
-package org.tensorflow.keras.types;
+// package org.tensorflow.keras.types;
 
-public enum PaddingMode {
-    valid, same, causal;
-}
+// public enum PaddingMode {
+//     valid, same, causal;
+// }
