@@ -1,4 +1,4 @@
 op {
   graph_op_name: "Iterator"
-  visibility: VISIBLE
+  visibility: SKIP
 }
