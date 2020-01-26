@@ -23,7 +23,11 @@ import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TInt64;
 import org.tensorflow.utils.Pair;
 
-public class MNISTClassifier implements Runnable {
+/**
+ * An example showing a simple feed-forward classifier for MNIST
+ * using tf.data and core TensorFlow (in Graph Mode).
+ */
+public class MNISTBasicGraphClassifier implements Runnable {
     private static final int INPUT_SIZE = 28 * 28;
 
     private static final float LEARNING_RATE = 0.2f;
@@ -32,7 +36,7 @@ public class MNISTClassifier implements Runnable {
     private static final int EPOCHS = 10;
 
     public static void main(String[] args) {
-        new MNISTClassifier().run();
+        new MNISTBasicGraphClassifier().run();
     }
 
     public Operand<TFloat32> predict(Ops tf, Operand<TFloat32> images, Variable<TFloat32> weights,
@@ -66,6 +70,7 @@ public class MNISTClassifier implements Runnable {
         return accuracy;
     }
 
+
     public void run() {
         try (Graph graph = new Graph()) {
             Ops tf = Ops.create(graph);
@@ -93,8 +98,8 @@ public class MNISTClassifier implements Runnable {
             Operand<TFloat32> testLabels = testComponents.get(1).expect(TFloat32.DTYPE);
 
             // Flatten image tensors
-            trainImages = tf.reshape(trainImages, tf.constant(new int[] { -1, 28 * 28 }));
-            testImages = tf.reshape(testImages, tf.constant(new int[] { -1, 28 * 28 }));
+            trainImages = tf.reshape(trainImages, tf.constant(new int[] { -1, INPUT_SIZE }));
+            testImages = tf.reshape(testImages, tf.constant(new int[] { -1, INPUT_SIZE }));
 
             // Declare, initialize weights
             Variable<TFloat32> weights = tf.variable(Shape.make(INPUT_SIZE, FEATURES), TFloat32.DTYPE);
