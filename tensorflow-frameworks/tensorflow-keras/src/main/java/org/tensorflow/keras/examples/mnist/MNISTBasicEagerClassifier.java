@@ -5,14 +5,20 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.tensorflow.EagerSession;
+import org.tensorflow.Graph;
 import org.tensorflow.Operand;
 import org.tensorflow.Output;
+import org.tensorflow.Session;
+import org.tensorflow.Tensor;
 import org.tensorflow.data.Dataset;
+import org.tensorflow.data.OneShotIterator;
 import org.tensorflow.keras.datasets.MNIST;
 import org.tensorflow.op.Ops;
+import org.tensorflow.op.core.Assign;
 import org.tensorflow.op.core.Constant;
 import org.tensorflow.op.core.Gradients;
 import org.tensorflow.op.core.Variable;
+import org.tensorflow.op.train.ApplyGradientDescent;
 import org.tensorflow.tools.Shape;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TInt64;
@@ -34,8 +40,8 @@ public class MNISTBasicEagerClassifier implements Runnable {
         new MNISTBasicEagerClassifier().run();
     }
 
-    public Operand<TFloat32> predict(Ops tf, Operand<TFloat32> images, Operand<TFloat32> weights,
-            Operand<TFloat32> biases) {
+    public Operand<TFloat32> predict(Ops tf, Operand<TFloat32> images, Variable<TFloat32> weights,
+            Variable<TFloat32> biases) {
         return tf.nn.softmax(tf.math.add(tf.linalg.matMul(images, weights), biases));
     }
 
@@ -50,42 +56,6 @@ public class MNISTBasicEagerClassifier implements Runnable {
         Operand<TFloat32> accuracy = tf.math.mean(tf.dtypes.cast(tf.math.equal(yHat, yTrue), TFloat32.DTYPE),
                 tf.constant(0));
         return accuracy;
-    }
-
-    public float runBatchIteration(Ops tf, List<Output<?>> batch, Operand<TFloat32> weights, Operand<TFloat32> biases,
-            Constant<TFloat32> alpha, boolean training) {
-        // Extract images and labels
-        Operand<TFloat32> imageBatch = batch.get(0).expect(TFloat32.DTYPE);
-        Operand<TFloat32> labelBatch = batch.get(1).expect(TFloat32.DTYPE);
-
-        // Flatten image tensors
-        imageBatch = tf.reshape(imageBatch, tf.constant(new int[] { -1, INPUT_SIZE }));
-
-        Operand<TFloat32> trainPrediction = predict(tf, imageBatch, weights, biases);
-        Operand<TFloat32> trainBatchAccuracy = accuracy(tf, trainPrediction, labelBatch);
-
-        if (training) {
-            Operand<TFloat32> trainLoss = crossEntropyLoss(tf, trainPrediction, labelBatch);
-            Gradients gradients = tf.gradients(trainLoss, Arrays.asList(weights, biases));
-            tf.train.applyGradientDescent(weights, alpha, gradients.dy(0));
-            tf.train.applyGradientDescent(biases, alpha, gradients.dy(1));
-        }
-
-        return trainBatchAccuracy.asOutput().tensor().floatValue();
-    }
-
-    public float runEpoch(Ops tf, Dataset dataset, Operand<TFloat32> weights, Operand<TFloat32> biases,
-            Constant<TFloat32> alpha, boolean training) {
-        
-        float numBatches = 0;
-        float epochAccuracy = 0;
-        
-        for (List<Output<?>> batch : dataset) {
-            epochAccuracy += runBatchIteration(tf, batch, weights, biases, alpha, training);
-            numBatches++;
-        }
-
-        return epochAccuracy / numBatches;
     }
 
     public void run() {
@@ -115,14 +85,53 @@ public class MNISTBasicEagerClassifier implements Runnable {
 
             // Run training loop
             for (int epoch = 0; epoch < EPOCHS; epoch++) {
-                float accuracy = runEpoch(tf, trainDataset, weights, biases, alpha, true);
-                System.out.println("Epoch #" + epoch + ": accuracy=" + accuracy);
+                int numBatches = 0;
+                float epochAccuracy = 0;
+
+                // Iterate through all batches in dataset
+                for (List<Output<?>> trainBatch : trainDataset) {
+                    // Extract images and labels
+                    Operand<TFloat32> trainImages = trainBatch.get(0).expect(TFloat32.DTYPE);
+                    Operand<TFloat32> trainLabels = trainBatch.get(1).expect(TFloat32.DTYPE);
+
+                    // Flatten image tensors
+                    trainImages = tf.reshape(trainImages, tf.constant(new int[] { -1, INPUT_SIZE }));
+
+                    Operand<TFloat32> trainPrediction = predict(tf, trainImages, weights, biases);
+                    Operand<TFloat32> trainLoss = crossEntropyLoss(tf, trainPrediction, trainLabels);
+
+                    // Calculate gradients
+                    Gradients gradients = tf.gradients(trainLoss, Arrays.asList(weights, biases));
+
+                    tf.train.applyGradientDescent(weights, alpha, gradients.dy(0));
+                    tf.train.applyGradientDescent(biases, alpha, gradients.dy(1));
+
+                    Operand<TFloat32> trainBatchAccuracy = accuracy(tf, trainPrediction, trainLabels);
+
+                    epochAccuracy += trainBatchAccuracy.asOutput().tensor().floatValue();
+                }
+
+                System.out.println("Epoch #" + epoch + ": accuracy=" + epochAccuracy / numBatches);
             }
 
             // Evaluate on test set
-            
-            float testAccuracy = runEpoch(tf, testDataset, weights, biases, alpha, false);
-            System.out.println("Test accuracy=" + testAccuracy);
+            float numTestBatches = 0;
+            float testAccuracy = 0;
+            for (List<Output<?>> testBatch : testDataset) {
+                // Extract images and labels
+                Operand<TFloat32> testImages = testBatch.get(0).expect(TFloat32.DTYPE);
+                Operand<TFloat32> testLabels = testBatch.get(1).expect(TFloat32.DTYPE);
+
+                // Flatten image tensors
+                testImages = tf.reshape(testImages, tf.constant(new int[] { -1, INPUT_SIZE }));
+
+                Operand<TFloat32> testPrediction = predict(tf, testImages, weights, biases);
+                Operand<TFloat32> testBatchAccuracy = accuracy(tf, testPrediction, testLabels);
+
+                testAccuracy += testBatchAccuracy.asOutput().tensor().floatValue();
+            }
+
+            System.out.println("Test accuracy=" + testAccuracy / numTestBatches);
         }
     }
 }
