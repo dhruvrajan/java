@@ -12,6 +12,7 @@ import org.tensorflow.data.Dataset;
 import org.tensorflow.keras.utils.DataUtils;
 import org.tensorflow.keras.utils.Keras;
 import org.tensorflow.op.Ops;
+import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TInt64;
 import org.tensorflow.utils.Pair;
 import org.tensorflow.utils.Tuple2;
@@ -53,13 +54,11 @@ public class MNIST {
 
         Dataset train = Dataset.fromTensorSlices(tf,
                 Arrays.asList(tf.constant(mnist.first().first()), tf.constant(mnist.first().second())),
-                Arrays.asList(TInt64.DTYPE, TInt64.DTYPE));
+                Arrays.asList(TFloat32.DTYPE, TFloat32.DTYPE));
 
         Dataset test = Dataset.fromTensorSlices(tf,
                 Arrays.asList(tf.constant(mnist.second().first()), tf.constant(mnist.second().second())),
-                Arrays.asList(TInt64.DTYPE, TInt64.DTYPE));
-
-        System.out.println("hi, there!");
+                Arrays.asList(TFloat32.DTYPE, TFloat32.DTYPE));
 
         return new Pair<>(train, test);
     }
