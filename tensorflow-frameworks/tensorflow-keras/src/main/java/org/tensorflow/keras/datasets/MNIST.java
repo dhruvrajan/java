@@ -7,13 +7,11 @@ import java.nio.FloatBuffer;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 
-import org.tensorflow.Graph;
 import org.tensorflow.data.Dataset;
 import org.tensorflow.keras.utils.DataUtils;
 import org.tensorflow.keras.utils.Keras;
 import org.tensorflow.op.Ops;
 import org.tensorflow.types.TFloat32;
-import org.tensorflow.types.TInt64;
 import org.tensorflow.utils.Pair;
 import org.tensorflow.utils.Tuple2;
 
