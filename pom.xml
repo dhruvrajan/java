@@ -32,7 +32,7 @@
     <module>tensorflow-tools</module>
     <module>tensorflow-core</module>
     <module>tensorflow-frameworks</module>
-    <!--module>tensorflow-starters</module> TODO -->
+    <module>tensorflow-training</module>
   </modules>
 
   <properties>
@@ -41,6 +41,7 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <junit.version>4.12</junit.version>
     <jmh.version>1.21</jmh.version>
+    <skipAssembly>true</skipAssembly>
   </properties>
 
   <dependencyManagement>
@@ -122,6 +123,15 @@
         </executions>
       </plugin-->
     </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.2.0</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
 
 </project>

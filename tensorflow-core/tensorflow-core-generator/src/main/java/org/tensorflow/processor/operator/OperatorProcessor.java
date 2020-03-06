@@ -16,37 +16,8 @@ limitations under the License.
 
 package org.tensorflow.processor.operator;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.Filer;
-import javax.annotation.processing.Messager;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.TypeParameterElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.TypeVariable;
-import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.Elements;
-import javax.tools.Diagnostic.Kind;
-
+import com.github.javaparser.ast.comments.JavadocComment;
+import com.github.javaparser.javadoc.Javadoc;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
@@ -61,19 +32,49 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 import com.squareup.javapoet.WildcardTypeName;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Filer;
+import javax.annotation.processing.Messager;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+import javax.tools.Diagnostic.Kind;
 
 /**
- * A compile-time Processor that aggregates classes annotated with {@link
+ * A compile-time Processor that aggregates classes annotated with {@code
  * org.tensorflow.op.annotation.Operator} and generates the {@code Ops} convenience API. Please
- * refer to the {@link org.tensorflow.op.annotation.Operator} annotation for details about the API
- * generated for each annotated class.
+ * refer to the {@code Operator} annotation for details about the API generated for each annotated
+ * class.
  *
  * <p>Note that this processor can only be invoked once, in a single compilation run that includes
  * all the {@code Operator} annotated source classes. The reason is that the {@code Ops} API is an
  * "aggregating" API, and annotation processing does not permit modifying an already generated
  * class.
- *
- * @see org.tensorflow.op.annotation.Operator
  */
 public final class OperatorProcessor extends AbstractProcessor {
 
@@ -88,6 +89,7 @@ public final class OperatorProcessor extends AbstractProcessor {
     messager = processingEnv.getMessager();
     filer = processingEnv.getFiler();
     elements = processingEnv.getElementUtils();
+    types = processingEnv.getTypeUtils();
   }
 
   @Override
@@ -154,26 +156,50 @@ public final class OperatorProcessor extends AbstractProcessor {
   }
 
   private static class OpsSpec {
+    private static final Comparator<MethodSpec> PARAMETER_SPEC_COMPARATOR = (o1, o2) -> {
+      if (o1.parameters.size() > o2.parameters.size()) {
+        return 1;
+      }
+      if (o1.parameters.size() < o2.parameters.size()) {
+        return -1;
+      }
+      List<ParameterSpec> firstParams = o1.parameters;
+      List<ParameterSpec> secondParams = o2.parameters;
+      for (int i = 0; i < firstParams.size(); i++) {
+        ParameterSpec first = firstParams.get(i);
+        ParameterSpec second = secondParams.get(i);
+        int compare = first.name.compareTo(second.name);
+        if (compare != 0) {
+          return compare;
+        }
+      }
+      return 0;
+    };
+    private static final Comparator<MethodSpec> METHOD_SPEC_COMPARATOR = Comparator.comparing((MethodSpec m) -> m.name).thenComparing(PARAMETER_SPEC_COMPARATOR);
+
     final String groupName;
     final String fieldName;
     final ClassName className;
-    final Collection<MethodSpec> methods;
+    final List<MethodSpec> methods;
     final List<OpsSpec> subGroups = new ArrayList<>();
 
     OpsSpec(String groupName, String fieldName, ClassName className, Collection<MethodSpec> methods) {
       this.groupName = groupName;
       this.fieldName = fieldName;
       this.className = className;
-      this.methods = methods;
+      this.methods = new ArrayList<>(methods);
+      this.methods.sort(METHOD_SPEC_COMPARATOR);
     }
   }
 
   private static final Pattern JAVADOC_TAG_PATTERN =
-      Pattern.compile("@(?:param|return|throws|exception|see)\\s+.*");
+      Pattern.compile("@(?:param|return|throws|exception|see|deprecated)\\s+.*");
   private static final TypeName T_OP = ClassName.get("org.tensorflow.op", "Op");
   private static final ClassName T_OPS = ClassName.get("org.tensorflow.op", "Ops");
   private static final TypeName T_OPERATOR =
       ClassName.get("org.tensorflow.op.annotation", "Operator");
+  private static final TypeName T_ENDPOINT =
+      ClassName.get("org.tensorflow.op.annotation", "Endpoint");
   private static final TypeName T_SCOPE = ClassName.get("org.tensorflow.op", "Scope");
   private static final TypeName T_EXEC_ENV =
       ClassName.get("org.tensorflow", "ExecutionEnvironment");
@@ -187,9 +213,26 @@ public final class OperatorProcessor extends AbstractProcessor {
   private static final TypeName T_ITERABLE_OPERAND =
       ParameterizedTypeName.get(ClassName.get(Iterable.class), T_OPERAND);
 
+  private static final String LICENSE =
+      "Copyright 2020 The TensorFlow Authors. All Rights Reserved.\n"
+          + "\n"
+          + "Licensed under the Apache License, Version 2.0 (the \"License\");\n"
+          + "you may not use this file except in compliance with the License.\n"
+          + "You may obtain a copy of the License at\n"
+          + "\n"
+          + "    http://www.apache.org/licenses/LICENSE-2.0\n"
+          + "\n"
+          + "Unless required by applicable law or agreed to in writing, software\n"
+          + "distributed under the License is distributed on an \"AS IS\" BASIS,\n"
+          + "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n"
+          + "See the License for the specific language governing permissions and\n"
+          + "limitations under the License.\n"
+          + "==============================================================================\n";
+
   private Filer filer;
   private Messager messager;
   private Elements elements;
+  private Types types;
   private boolean hasRun = false;
 
   private void error(Element e, String message, Object... args) {
@@ -201,7 +244,12 @@ public final class OperatorProcessor extends AbstractProcessor {
 
   private void write(TypeSpec spec) {
     try {
-      JavaFile.builder("org.tensorflow.op", spec).skipJavaLangImports(true).build().writeTo(filer);
+      JavaFile.builder("org.tensorflow.op", spec)
+        .addFileComment(LICENSE)
+        .addFileComment("\nThis class has been generated, DO NOT EDIT!\n")
+        .skipJavaLangImports(true)
+        .build()
+        .writeTo(filer);
     } catch (IOException e) {
       throw new AssertionError(e);
     }
@@ -232,55 +280,86 @@ public final class OperatorProcessor extends AbstractProcessor {
         result = false;
         continue;
       }
-      TypeElement opClass = (TypeElement) e;
-      // Skip deprecated operations for now, as we do not guarantee API stability yet
-      if (opClass.getAnnotation(Deprecated.class) == null) {
-        collectOpMethods(groupedMethods, opClass, annotation);
-      }
+      collectOpMethods(groupedMethods, (TypeElement)e, annotation);
     }
     return result;
   }
 
   private void collectOpMethods(
       Multimap<String, MethodSpec> groupedMethods, TypeElement opClass, TypeElement annotation) {
-    AnnotationMirror am = getAnnotationMirror(opClass, annotation);
-    String groupName = getAnnotationElementValueAsString("group", am);
-    String methodName = getAnnotationElementValueAsString("name", am);
-    ClassName opClassName = ClassName.get(opClass);
-    if (Strings.isNullOrEmpty(methodName)) {
-      methodName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, opClassName.simpleName());
+    boolean opClassDeprecated = opClass.getAnnotation(Deprecated.class) != null;
+    AnnotationMirror operatorAnnot = getAnnotationMirror(opClass, annotation.getQualifiedName());
+    if (operatorAnnot == null) {
+      throw new IllegalArgumentException(
+          "Annotation "
+              + annotation.getSimpleName()
+              + " not present on element "
+              + opClass.getSimpleName());
     }
-    // Build a method for each @Operator found in the class path. There should be one method per
-    // operation factory called
-    // "create", which takes in parameter a scope and, optionally, a list of arguments
+    String opGroup = getAnnotationElementValueAsString("group", operatorAnnot);
+    String opName = getAnnotationElementValueAsString("name", operatorAnnot);
+    if (Strings.isNullOrEmpty(opName)) {
+      opName = CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, ClassName.get(opClass).simpleName());
+    }
+    // Build an endpoint for each method annotated with @Endpoint, which takes in parameter a scope
+    // and, optionally, a list of arguments
     for (ExecutableElement opMethod : ElementFilter.methodsIn(opClass.getEnclosedElements())) {
-      if (opMethod.getModifiers().contains(Modifier.STATIC)
-          && opMethod.getSimpleName().contentEquals("create")) {
-        MethodSpec method = buildOpMethod(methodName, opClassName, opMethod);
-        groupedMethods.put(groupName, method);
+      AnnotationMirror endpointAnnot =
+          getAnnotationMirror(opMethod, elements.getName(T_ENDPOINT.toString()));
+      if (endpointAnnot != null) {
+        if (!opMethod.getModifiers().containsAll(Arrays.asList(Modifier.STATIC, Modifier.PUBLIC))) {
+          throw new IllegalArgumentException(
+              "Endpoint " + opMethod + " of class " + opClass + " must be static and public");
+        }
+        if (opMethod.getParameters().isEmpty() ||
+            !((TypeElement)types.asElement(opMethod.getParameters().get(0).asType())).getQualifiedName()
+                .equals(elements.getName(T_SCOPE.toString()))) {
+          throw new IllegalArgumentException(
+              "Endpoint " + opMethod + " of class " + opClass + " must take an instance of " + T_SCOPE
+                  + " as its first parameter");
+        }
+        String endpointGroup = getAnnotationElementValueAsString("group", endpointAnnot);
+        if (endpointGroup.isEmpty()) {
+          endpointGroup = opGroup;
+        }
+        String endpointName = getAnnotationElementValueAsString("name", endpointAnnot);
+        if (endpointName.isEmpty()) {
+          endpointName = opName;
+        }
+        boolean describeByClass =
+            getAnnotationElementValueAsBoolean("describeByClass", endpointAnnot, false);
+        boolean deprecated = opMethod.getAnnotation(Deprecated.class) != null || opClassDeprecated;
+        MethodSpec method = buildOpMethod(endpointName, opClass, opMethod, describeByClass, deprecated);
+        groupedMethods.put(endpointGroup, method);
       }
     }
   }
 
   private MethodSpec buildOpMethod(
-      String methodName, ClassName opClassName, ExecutableElement factoryMethod) {
+      String methodName, TypeElement opClass, ExecutableElement endpointMethod,
+      boolean describeByClass, boolean deprecated) {
     MethodSpec.Builder builder =
         MethodSpec.methodBuilder(methodName)
             .addModifiers(Modifier.PUBLIC)
-            .returns(TypeName.get(factoryMethod.getReturnType()))
-            .varargs(factoryMethod.isVarArgs())
-            .addJavadoc("$L", buildOpMethodJavadoc(opClassName, factoryMethod));
+            .returns(TypeName.get(endpointMethod.getReturnType()))
+            .varargs(endpointMethod.isVarArgs())
+            .addJavadoc("$L", buildOpMethodJavadoc(opClass, endpointMethod, describeByClass));
 
-    for (TypeParameterElement tp : factoryMethod.getTypeParameters()) {
+    if (deprecated) {
+      builder.addAnnotation(Deprecated.class);
+    }
+    for (TypeParameterElement tp : endpointMethod.getTypeParameters()) {
       TypeVariableName tvn = TypeVariableName.get((TypeVariable) tp.asType());
       builder.addTypeVariable(tvn);
     }
-    for (TypeMirror thrownType : factoryMethod.getThrownTypes()) {
+    for (TypeMirror thrownType : endpointMethod.getThrownTypes()) {
       builder.addException(TypeName.get(thrownType));
     }
-    StringBuilder call = new StringBuilder("return $T.create(scope");
+    StringBuilder call = new StringBuilder("return $T.")
+      .append(endpointMethod.getSimpleName())
+      .append("(scope");
     boolean first = true;
-    for (VariableElement param : factoryMethod.getParameters()) {
+    for (VariableElement param : endpointMethod.getParameters()) {
       ParameterSpec p = ParameterSpec.get(param);
       if (first) {
         first = false;
@@ -291,31 +370,25 @@ public final class OperatorProcessor extends AbstractProcessor {
       builder.addParameter(p);
     }
     call.append(")");
-    builder.addStatement(call.toString(), opClassName);
+    builder.addStatement(call.toString(), ClassName.get(opClass));
     return builder.build();
   }
 
-  private String buildOpMethodJavadoc(ClassName opClassName, ExecutableElement factoryMethod) {
-    StringBuilder javadoc = new StringBuilder();
-    javadoc.append("Builds an {@link ").append(opClassName.simpleName()).append("} operation\n\n");
-
-    // Add all javadoc tags found in the operator factory method but the first one, which should be
-    // in all cases the
-    // 'scope' parameter that is implicitly passed by this API
-    Matcher tagMatcher = JAVADOC_TAG_PATTERN.matcher(elements.getDocComment(factoryMethod));
-    boolean firstParam = true;
-
-    while (tagMatcher.find()) {
-      String tag = tagMatcher.group();
-      if (tag.startsWith("@param") && firstParam) {
-        firstParam = false;
-      } else {
-        javadoc.append(tag).append('\n');
-      }
+  private String buildOpMethodJavadoc(
+      TypeElement opClass, ExecutableElement endpointMethod, boolean copyClassDescription) {
+    Javadoc methodJavadoc = parseJavadoc(endpointMethod);
+    if (!copyClassDescription) {
+      return methodJavadoc.toText();
     }
-    javadoc.append("@see ").append(opClassName).append("\n");
-
-    return javadoc.toString();
+    Javadoc classJavadoc = parseJavadoc(opClass);
+    // Copy all endpoint method tags to the description, except for the `scope` parameter which
+    // will be inferred by the Ops class
+    methodJavadoc.getBlockTags().forEach(t -> {
+      if (!t.getTagName().equals("param") || t.getName().map(s -> !s.equals("scope")).orElse(true)) {
+        classJavadoc.addBlockTag(t);
+      }
+    });
+    return classJavadoc.toText();
   }
 
   private static Collection<OpsSpec> collectGroupOps(OpsSpec ops, Multimap<String, MethodSpec> groupedMethods) {
@@ -398,27 +471,27 @@ public final class OperatorProcessor extends AbstractProcessor {
                     + "{@link $T @Operator} is exposed\n"
                     + "by this API or one of its subgroup.\n<p>Example usage:\n<pre>{@code\n"
                     + "try (Graph g = new Graph()) {\n"
-                    + "  Ops ops = Ops.create(g);\n"
+                    + "  Ops tf = Ops.create(g);\n"
                     + "  // Operations are typed classes with convenience\n"
                     + "  // builders in Ops.\n"
-                    + "  Constant three = ops.constant(3);\n"
+                    + "  Constant<TInt32> three = tf.val(3);\n"
                     + "  // Single-result operations implement the Operand\n"
                     + "  // interface, so this works too.\n"
-                    + "  Operand four = ops.constant(4);\n"
+                    + "  Operand<TInt32> four = tf.val(4);\n"
                     + "  // Most builders are found within a group, and accept\n"
                     + "  // Operand types as operands\n"
-                    + "  Operand nine = ops.math.add(four, ops.constant(5));\n"
+                    + "  Operand<TInt32> nine = tf.math.add(four, tf.val(5));\n"
                     + "  // Multi-result operations however offer methods to\n"
                     + "  // select a particular result for use.\n"
-                    + "  Operand result = \n"
-                    + "      ops.math.add(ops.unique(s, a).y(), b);\n"
+                    + "  Operand<TInt32> result = \n"
+                    + "      tf.math.add(tf.unique(s, a).y(), b);\n"
                     + "  // Optional attributes\n"
-                    + "  ops.linalg.matMul(a, b, MatMul.transposeA(true));\n"
+                    + "  tf.linalg.matMul(a, b, MatMul.transposeA(true));\n"
                     + "  // Naming operators\n"
-                    + "  ops.withName(\"foo\").constant(5); // name \"foo\"\n"
+                    + "  tf.withName(\"foo\").val(5); // name \"foo\"\n"
                     + "  // Names can exist in a hierarchy\n"
-                    + "  Ops sub = ops.withSubScope(\"sub\");\n"
-                    + "  sub.withName(\"bar\").constant(4); // \"sub/bar\"\n"
+                    + "  Ops sub = tf.withSubScope(\"sub\");\n"
+                    + "  sub.withName(\"bar\").val(4); // \"sub/bar\"\n"
                     + "}\n"
                     + "}</pre>\n",
                 T_OP,
@@ -510,26 +583,43 @@ public final class OperatorProcessor extends AbstractProcessor {
     });
   }
 
-  private static AnnotationMirror getAnnotationMirror(Element element, TypeElement annotation) {
+  private static AnnotationMirror getAnnotationMirror(Element element, Name annotationName) {
     for (AnnotationMirror am : element.getAnnotationMirrors()) {
-      if (am.getAnnotationType().asElement().equals(annotation)) {
+      if (((TypeElement)am.getAnnotationType().asElement()).getQualifiedName().equals(annotationName)) {
         return am;
       }
     }
-    throw new IllegalArgumentException(
-        "Annotation "
-            + annotation.getSimpleName()
-            + " not present on element "
-            + element.getSimpleName());
+    return null;
   }
 
-  private static String getAnnotationElementValueAsString(String elementName, AnnotationMirror am) {
+  private static AnnotationValue getAnnotationElementValue(String elementName, AnnotationMirror am) {
     for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
         am.getElementValues().entrySet()) {
       if (entry.getKey().getSimpleName().contentEquals(elementName)) {
-        return entry.getValue().getValue().toString();
+        return entry.getValue();
       }
     }
-    return "";
+    return null;
+  }
+
+  private static String getAnnotationElementValueAsString(String elementName, AnnotationMirror am) {
+    AnnotationValue value = getAnnotationElementValue(elementName, am);
+    return value != null ? value.getValue().toString() : "";
+  }
+
+  private static boolean getAnnotationElementValueAsBoolean(String elementName, AnnotationMirror am, boolean defaultValue) {
+    AnnotationValue value = getAnnotationElementValue(elementName, am);
+    return value != null ? Boolean.parseBoolean(value.toString()) : defaultValue;
+  }
+
+  private Javadoc parseJavadoc(Element element) {
+    String docComment = elements.getDocComment(element);
+    JavadocComment javadocComment;
+    if (docComment != null) {
+      javadocComment = new JavadocComment(docComment);
+    } else {
+      javadocComment = new JavadocComment();
+    }
+    return javadocComment.parse();
   }
 }
