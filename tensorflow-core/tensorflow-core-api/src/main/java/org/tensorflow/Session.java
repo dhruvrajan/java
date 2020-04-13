@@ -41,6 +41,8 @@ import org.tensorflow.op.Op;
 import org.tensorflow.proto.framework.ConfigProto;
 import org.tensorflow.proto.framework.RunMetadata;
 import org.tensorflow.proto.framework.RunOptions;
+import org.tensorflow.types.*;
+import org.tensorflow.types.family.TType;
 
 /**
  * Driver for {@link Graph} execution.
@@ -295,8 +297,8 @@ public final class Session implements AutoCloseable {
      * <p>TODO(andrewmyers): It would also be good if whatever is returned here made it easier to
      * extract output tensors in a type-safe way.
      */
-    public List<Tensor<?>> run() {
-      return runHelper(false).outputs;
+    public Session.Run run() {
+      return new Session.Run(runHelper(false).outputs);
     }
 
     /**
@@ -372,10 +374,7 @@ public final class Session implements AutoCloseable {
           throw e;
         }
       }
-      Run ret = new Run();
-      ret.outputs = outputs;
-      ret.metadata = metadata;
-      return ret;
+      return new Run(outputs, metadata);
     }
 
     private class Reference implements AutoCloseable {
@@ -469,7 +468,7 @@ public final class Session implements AutoCloseable {
    *
    * <p>See {@link Runner#runAndFetchMetadata()}
    */
-  public static final class Run {
+  public static final class Run implements AutoCloseable {
     /** Tensors from requested fetches. */
     public List<Tensor<?>> outputs;
 
@@ -485,6 +484,51 @@ public final class Session implements AutoCloseable {
      * this field may be replaced by more type-safe equivalents at any time.
      */
     public RunMetadata metadata;
+
+    /**
+     * Current `pop` index in the `outputs` list.
+     */
+    private int index = 0;
+
+    Run(List<Tensor<?>> outputs, RunMetadata metadata) {
+      this.outputs = outputs;
+      this.metadata = metadata;
+    }
+
+    Run(List<Tensor<?>> outputs) {
+      this.outputs = outputs;
+    }
+
+    public <T extends TType> Tensor<T> pop(DataType<T> dtype) {
+      return outputs.get(index++).expect(dtype);
+    }
+
+    public int popInt(long... coordinates) {
+      return pop(TInt32.DTYPE).data().getInt(coordinates);
+    }
+
+    public long popLong(long... coordinates) {
+      return pop(TInt64.DTYPE).data().getLong(coordinates);
+    }
+
+    public float popFloat16(long... coordinates) {
+      return pop(TFloat16.DTYPE).data().getFloat(coordinates);
+    }
+
+    public float popFloat(long... coordinates) {
+      return pop(TFloat32.DTYPE).data().getFloat(coordinates);
+    }
+
+    public double popDouble(long... coordinates) {
+      return pop(TFloat64.DTYPE).data().getDouble(coordinates);
+    }
+
+    @Override
+    public void close() {
+      for (Tensor<?> tensor : this.outputs) {
+        tensor.close();
+      }
+    }
   }
 
   private final Graph graph;
